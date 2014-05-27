@@ -1,0 +1,1033 @@
+<html>
+
+    <!-- TODO:
+            * Parse URL's (parse them before or after the string is escaped?)
+            * Write a help message
+    -->
+
+    <head>
+
+        <!-- Standard settings -->
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+        <!-- The page title -->
+        <title>{{ title }}</title>
+
+        <!-- Standard libraries -->
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+        <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js"></script>
+        <script src="//code.jquery.com/color/jquery.color-2.1.2.min.js"></script>
+        <link rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/themes/base/jquery-ui.css">
+        <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+        
+        <!-- Custom style settings -->
+        <style type="text/css">
+        
+        /* Some general styling for the body */
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 14px;
+        }
+
+        /* Some general styling for the container div */
+        #container {
+            background-color: #F5F5F5;
+            border: 3px double #C5C5C5;
+            padding: 10px;
+            /*width: 75%;*/
+            margin: auto;
+            min-height: 78px;
+        }
+
+        /* Some styling for the title of the minutes */
+        #container_minutes_title {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        /* Some styling for the inputs of the minutes content */
+        #minutes_content input {
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+
+        /* Some styling for the buttons of the minutes content */
+        #minutes_content button {
+            margin-top: 10px;
+            margin-bottom: 10px;
+            vertical-align: bottom;
+        }
+
+        /* Some styling for the textareas of the minutes content */
+        #minutes_content textarea {
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+
+        /* Some styling for the list items of the minutes content */
+        #minutes_content li {
+            padding: 5px;
+            border: 1px dotted transparent;
+        }
+
+        /* The div for the button that generates the minutes and the textarea */
+        #container_generate_minutes {
+            margin-bottom: 10px;
+            display: none;
+            text-align: center;
+        }
+
+        /* The button that generates the minutes */
+        #container_generate_minutes button {
+            font-weight: bold;
+            vertical-align: middle;
+        }
+
+        /* Set the font size of the sources textarea */
+        #minutes_source {
+            font-size: 10px;
+            display: none;
+        }
+
+        /* Set the font size of the dialog's title */
+        .ui-dialog-titlebar {
+            font-size: 12px;
+        }
+
+        /* Set the font size of the autocomplete menu items */
+        .ui-menu-item {
+            font-size: 12px;
+        }
+
+        /* Options on the category */
+        span.category {
+            font-weight: {{ category_font_weight }};
+        }
+
+        /* Options on the subcategory */
+        span.subcategory {
+            font-weight: {{ subcategory_font_weight }};
+        }
+
+        /* A class name that gets applied to the otherwise white space. */
+        .sortable-state-highlight {
+            border: 1px dotted #DDDDDD;
+            background-color: #FFFFBB;
+        }
+
+        /* Set the menu style */
+        #menu {
+            position: absolute;
+            right: 13px;
+            top: 13px;
+        }
+
+        /* Set the menu width */
+        .ui-menu {
+            width: 75px;
+        }
+
+        </style>
+
+    </head>
+
+    <body>
+
+        <div id="container">
+
+            <div id="container_menu">
+                <ul id="menu">
+                    <li id="menu_save">
+                        <a href="#"><span class="ui-icon ui-icon-disk"></span>Save</a>
+                    </li>
+                    <li id="menu_load">
+                        <a href="#"><span class="ui-icon ui-icon-folder-open"></span>Load</a>
+                    </li>
+                    <li id="menu_reset">
+                        <a href="#"><span class="ui-icon ui-icon-trash"></span>Reset</a>
+                        </li>
+                    <li id="menu_help">
+                        <a href="#"><span class="ui-icon ui-icon-help"></span>Help</a>
+                    </li>
+                </ul>
+            </div>
+
+            <div id="container_minutes_title">
+                Start by adding a new project!
+            </div>
+
+            <div id="container_generate_minutes">
+                <button id="generate_minutes_button">I'm done! Generate the source.</button>
+                <!-- TODO: Have this textarea disabled or not? -->
+                <!--<textarea id="minutes_source" rows="30 "cols="121" disabled="disabled"></textarea>-->
+                <textarea id="minutes_source" rows="30 "cols="84"></textarea>
+            </div>
+
+            <div id="minutes_content">
+            </div>
+
+            <div id="container_add_category">
+                <input size="30" type="text" id="add_category_text" placeholder="New Project..." />
+                <button id="add_category_button">&#10010;</button>
+            </div>
+
+        </div>
+
+        <script>
+
+/*****************
+* INITIALIZATION *
+*****************/
+
+// Keep an array of all the minutes added
+var minutes = [];
+var minutes_have_been_added = false;
+load_state();
+
+// The autocompletion options for the categories and subcategories
+var categories = [
+{{ categories | safe }}
+];
+var subcategories = [
+{{ subcategories | safe }}
+];
+
+// Provide autocompletion for the categories
+$(function() {
+    $("#add_category_text").autocomplete({
+        source: categories
+    });
+});
+
+// Create a menu with options
+$(function() {
+    $("#menu").menu();
+});
+
+// Handle INC-incindents
+var inc_for_re = /(INC\d+)/g;
+var inc_for_out = "<a href='https://cern.service-now.com/service-portal/view-incident.do?n=$1'>$1</a>";
+var inc_rev_re = /<a href=['"]https:\/\/cern\.service-now\.com\/service-portal\/view-incident\.do\?n=(INC\d+)['"]>(INC\d+)<\/a>/g;
+var inc_rev_out = "$1"
+function inc_for(text) {
+    return text.replace(inc_for_re, inc_for_out);
+};
+function inc_rev(text) {
+    return text.replace(inc_rev_re, inc_rev_out);
+};
+
+// Handle RQF-requests
+var rqf_for_re = /(RQF\d+)/g;
+var rqf_for_out = "<a href='https://cern.service-now.com/service-portal/view-request.do?n=$1'>$1</a>";
+var rqf_rev_re = /<a href=['"]https:\/\/cern\.service-now\.com\/service-portal\/view-request\.do\?n=(RQF\d+)['"]>(RQF\d+)<\/a>/g;
+var rqf_rev_out = "$1"
+function rqf_for(text) {
+    return text.replace(rqf_for_re, rqf_for_out);
+};
+function rqf_rev(text) {
+    return text.replace(rqf_rev_re, rqf_rev_out);
+};
+
+// Handle invenio-software.org trac tickets
+var iitt_for_re = /ticket\s#(\d+)/g;
+var iitt_for_out = "<a href='http://invenio-software.org/ticket/$1'>ticket #$1</a>";
+var iitt_rev_re = /<a href=['"]http:\/\/invenio\-software\.org\/ticket\/\d+['"]>(ticket\s#\d+)<\/a>/g;
+var iitt_rev_out = "$1"
+function iitt_for(text) {
+    return text.replace(iitt_for_re, iitt_for_out);
+};
+function iitt_rev(text) {
+    return text.replace(iitt_rev_re, iitt_rev_out);
+};
+
+// Handle URLs
+var url_for_re = /((http|ftp|https):\/\/[\w-]+(\.[\w-]+)+([\w.,@?^=%&amp;:\/~+#-]*[\w@?^=%&amp;\/~+#-])?)/gi
+var url_for_out = "<a href='$1'>$1</a>";
+var url_rev_re = /<a href=['"]((http|ftp|https):\/\/[\w-]+(\.[\w-]+)+([\w.,@?^=%&amp;:\/~+#-]*[\w@?^=%&amp;\/~+#-])?)['"]>((http|ftp|https):\/\/[\w-]+(\.[\w-]+)+([\w.,@?^=%&amp;:\/~+#-]*[\w@?^=%&amp;\/~+#-])?)<\/a>/gi;
+var url_rev_out = "$1"
+function url_for(text) {
+    return text.replace(url_for_re, url_for_out);
+};
+function url_rev(text) {
+    return text.replace(url_rev_re, url_rev_out);
+};
+
+/******
+* ADD *
+******/
+
+// Add a category
+$("#add_category_button").click(function() {
+
+    // Get the title of the new category
+    var add_category_text = $.escapeHTML($.trim($("#add_category_text").val()));
+
+    // Make sure that the new category has a title and that it doesn't already exist
+    var minutes_categories = minutes.map(get_first_element);
+    if ( add_category_text && minutes_categories.indexOf(add_category_text) == -1 ) {
+
+        // Reset the title of the new category
+        $("#add_category_text").val("");
+
+        // Once the first content has been added, change the instructions and create the sortable minutes list
+        if ( !minutes_have_been_added ) {
+            minutes_have_been_added = true;
+            $("#container_minutes_title").hide();
+            $("#container_generate_minutes").fadeIn();
+            $("#minutes_content").append("<ul id='minutes_list'></ul>");
+            $("#minutes_list").sortable({
+                placeholder: "sortable-state-highlight",
+                start: function(event, ui) {
+                    var old_category_index = $(ui.item).index();
+                    $(ui.item).data("old_category_index", old_category_index);
+                },
+                update: function(event, ui) {
+                    var new_category_index = $(ui.item).index();
+                    var old_category_index = $(ui.item).data("old_category_index");
+                    if ( new_category_index != old_category_index ) {
+                        minutes.move(old_category_index, new_category_index);
+                        // Save the state
+                        save_state();
+                    }
+                }
+            });
+            //The following line causes a bug in Firefox where input fields and
+            //textareas would not react to the left mouse click
+            //$("#minutes_list").disableSelection();
+        }
+
+        // Add the new category to the minutes dictionary
+        minutes.push([add_category_text, []]);
+
+        // Create the new category HTML
+        var add_category_html = "<li><span class='category'>" + add_category_text + "</span><ul></ul></li>"
+        $("#minutes_list").append(add_category_html);
+        $("#minutes_list").children("li").last().children("ul").sortable({
+            placeholder: "sortable-state-highlight",
+            start: function(event, ui) {
+                var old_subcategory_index = $(ui.item).index();
+                $(ui.item).data("old_subcategory_index", old_subcategory_index);
+            },
+            update: function(event, ui) {
+                var new_subcategory_index = $(ui.item).index();
+
+                var old_subcategory_index = $(ui.item).data("old_subcategory_index");
+                if ( new_subcategory_index != old_subcategory_index ) {
+                    var parent_category_index = $(ui.item).parent().parent().index();
+                    minutes[parent_category_index][1].move(old_subcategory_index, new_subcategory_index);
+                    // Save the state
+                    save_state();
+                }
+            }
+        });
+        //The following line causes a bug in Firefox where input fields and
+        //textareas would not react to the left mouse click
+        //$("#minutes_list").children("li").last().children("ul").disableSelection();
+
+        // Create the add new subcategory HTML and set up the autocompletion
+        var add_subcategory_html = "<input size='40' type='text' name='add_subcategory_text' placeholder='What part of the project did you work on?' /><button name='add_subcategory_button'>&#10010;</button>"
+        $("#minutes_list").children("li").last().append(add_subcategory_html);
+        $("#minutes_list").children("li").last().children("input").autocomplete({
+            source: subcategories
+        });
+        $("#minutes_list").children("li").last().children("input").focus();
+
+        // Save the state
+        save_state();
+
+    }
+
+    else {
+        $(this).siblings("input").css("background-color", "red").delay(100).animate({backgroundColor: "white"}, "slow").focus();
+    }
+
+});
+
+// Add a subcategory
+$("#minutes_content").delegate("button[name='add_subcategory_button']", "click", function() {
+
+    // Get the title of the new subcategory
+    var add_subcategory_text = $.escapeHTML($.trim($(this).siblings("input[name='add_subcategory_text']").val()));
+
+    // Make sure that the new subcategory has a title and that it doesn't already exist
+    var parent_category_index = $(this).parent().index()
+    var minutes_category_subcategories = minutes[parent_category_index][1].map(get_first_element);
+    if ( add_subcategory_text && minutes_category_subcategories.indexOf(add_subcategory_text) == -1 ) {
+
+        // Reset the title of the new subcategory
+        $(this).siblings("input[name='add_subcategory_text']").val("");
+
+        // Add the new subcategory to the minutes dictionary
+        minutes[parent_category_index][1].push([add_subcategory_text, []])
+
+        // Create the new subcategory HTML
+        var add_subcategory_html = "<li><span class='subcategory'>" + add_subcategory_text + "</span><ul></ul></li>"
+        $(this).siblings("ul").append(add_subcategory_html);
+        $(this).siblings("ul").children("li").last().children("ul").sortable({
+            placeholder: "sortable-state-highlight",
+            start: function(event, ui) {
+                var old_text_index = $(ui.item).index();
+                $(ui.item).data("old_text_index", old_text_index);
+            },
+            update: function(event, ui) {
+                var new_text_index = $(ui.item).index();
+                var old_text_index = $(ui.item).data("old_text_index");
+                if ( new_text_index != old_text_index ) {
+                    var parent_category_index = $(ui.item).parent().parent().parent().parent().index();
+                    var parent_subcategory_index = $(ui.item).parent().parent().index();
+                    minutes[parent_category_index][1][parent_subcategory_index][1].move(old_text_index, new_text_index);
+                    // Save the state
+                    save_state();
+                }
+            }
+        });
+        //The following line causes a bug in Firefox where input fields and
+        //textareas would not react to the left mouse click
+        //$(this).siblings("ul").children("li").last().children("ul").disableSelection();
+
+        // Create the add new text HTML
+        var add_text_html = "<textarea rows='2' cols='75' name='add_text_text' placeholder='Describe the task you worked on...'></textarea><button name='add_text_button'>&#10010;</button>";
+        $(this).siblings("ul").children("li").last().append(add_text_html);
+        $(this).siblings("ul").children("li").last().children("textarea").focus();
+
+        // Save the state
+        save_state();
+
+    }
+
+    else {
+        $(this).siblings("input").css("background-color", "red").delay(100).animate({backgroundColor: "white"}, "slow").focus();
+    }
+
+});
+
+// Add some text
+$("#minutes_content").delegate("button[name='add_text_button']", "click", function() {
+
+    // Get the text
+    var add_text_text = nl2br(iitt_for(inc_for(rqf_for(url_for($.escapeHTML($.trim($(this).siblings("textarea").val())))))));
+
+    // Make sure that there is some text
+    if ( add_text_text ) {
+
+        // Reset the text
+        $(this).siblings("textarea").val("");
+
+        // Add the new text to the minutes dictionary
+        var parent_category_index = $(this).parent().parent().parent().index();
+        var parent_subcategory_index = $(this).parent().index();
+        minutes[parent_category_index][1][parent_subcategory_index][1].push(add_text_text)
+
+        // Create the new text HTML
+        $(this).siblings("ul").append("<li><span class='text'>" + add_text_text + "</span></li>");
+        $(this).siblings("textarea").focus();
+
+        // Save the state
+        save_state();
+
+    }
+
+    else {
+        $(this).siblings("textarea").css("background-color", "red").delay(100).animate({backgroundColor: "white"}, "slow").focus();
+    }
+
+});
+
+/****************
+* EDIT / DELETE *
+****************/
+
+// Prepare to edit or delete a category, subcategory or text
+$("#minutes_content").delegate("span", "click", function(event) {
+
+    if ( $(event.target).is("span") || $(event.target).is("a") ) {
+        if ( $(event.target).is("a") ) {
+            event.preventDefault();
+        };
+
+        var original_text = br2nl(url_rev(iitt_rev(inc_rev(rqf_rev($(this).html())))));
+
+        if ( $(this).attr("class") == "category" && $(this).children("input").length < 1 ) {
+            var edit_category_html = "<input size='30' type='text' name='edit_category_text' placeholder='Which project did you work on?' value='" + original_text + "' /><button name='edit_category_button'>&#10004;</button><button name='delete_category_button'>&#10006;</button>";
+            $(this).html(edit_category_html);
+            $(this).children("input").autocomplete({
+                source: categories
+            });
+            $(this).children("input").focus();
+        }
+
+        if ( $(this).attr("class") == "subcategory" && $(this).children("input").length < 1 ) {
+            var edit_subcategory_html = "<input size='40' type='text' name='edit_subcategory_text' placeholder='What part of the project did you work on?' value='" + original_text + "' /><button name='edit_subcategory_button'>&#10004;</button><button name='delete_subcategory_button'>&#10006;</button>";
+            $(this).html(edit_subcategory_html);
+            $(this).children("input").autocomplete({
+                source: subcategories
+            });
+            $(this).children("input").focus();
+        }
+
+        if ( $(this).attr("class") == "text" && $(this).children("textarea").length < 1 ) {
+            var edit_text_html = "<textarea rows='2' cols='75' name='edit_text_text' placeholder='Describe the task you worked on...'>" + original_text + "</textarea><button name='edit_text_button'>&#10004;</button><button name='delete_text_button'>&#10006;</button>"
+            $(this).html(edit_text_html);
+            $(this).children("textarea").focus();
+        }
+
+    }
+
+});
+
+// Edit a category
+$("#minutes_content").delegate("button[name='edit_category_button']", "click", function() {
+
+    var new_text = $.escapeHTML($.trim($(this).siblings("input[name='edit_category_text']").val()));
+
+    var category_index = $(this).parent().parent().index();
+    var minutes_categories = minutes.map(get_first_element);
+
+    if ( new_text && ( minutes_categories.indexOf(new_text) == -1 || minutes_categories.indexOf(new_text) == category_index ) ) {
+        minutes[category_index][0] = new_text;
+        $(this).parent().html(new_text);
+
+        // Save the state
+        save_state();
+    }
+
+    else {
+        $(this).siblings("input").css("background-color", "red").delay(100).animate({backgroundColor: "white"}, "slow").focus();
+    }
+
+});
+
+// Delete a category
+$("#minutes_content").delegate("button[name='delete_category_button']", "click", function() {
+    var category_index = $(this).parent().parent().index();
+    minutes.splice(category_index ,1);
+    $(this).parent().parent().slideUp("fast", function() {
+        $(this).remove();
+    });
+
+    // Save the state
+    save_state();
+});
+
+// Edit a subcategory
+$("#minutes_content").delegate("button[name='edit_subcategory_button']", "click", function() {
+
+    var new_text = $.escapeHTML($.trim($(this).siblings("input[name='edit_subcategory_text']").val()));
+
+    var category_index = $(this).parent().parent().parent().parent().index();
+    var subcategory_index = $(this).parent().parent().index();
+    var minutes_category_subcategories = minutes[category_index][1].map(get_first_element);
+
+    if ( new_text && ( minutes_category_subcategories.indexOf(new_text) == -1 || minutes_category_subcategories.indexOf(new_text) == subcategory_index ) ) {
+        minutes[category_index][1][subcategory_index][0] = new_text;
+        $(this).parent().html(new_text);
+
+        // Save the state
+        save_state();
+    }
+
+    else {
+        $(this).siblings("input").css("background-color", "red").delay(100).animate({backgroundColor: "white"}, "slow").focus();
+    }
+
+});
+
+// Delete a subcategory
+$("#minutes_content").delegate("button[name='delete_subcategory_button']", "click", function() {
+    var category_index = $(this).parent().parent().parent().parent().index();
+    var subcategory_index = $(this).parent().parent().index();
+    minutes[category_index][1].splice(subcategory_index, 1);
+    $(this).parent().parent().slideUp("fast", function() {
+        $(this).remove();
+    });
+
+    // Save the state
+    save_state();
+});
+
+// Edit some text
+$("#minutes_content").delegate("button[name='edit_text_button']", "click", function() {
+
+    var new_text = nl2br(iitt_for(inc_for(rqf_for(url_for(($.escapeHTML($.trim($(this).siblings("textarea[name='edit_text_text']").val()))))))));
+
+    if ( new_text ) {
+        var category_index = $(this).parent().parent().parent().parent().parent().parent().index();
+        var subcategory_index = $(this).parent().parent().parent().parent().index();
+        var text_index = $(this).parent().parent().index();
+        minutes[category_index][1][subcategory_index][1][text_index] = new_text
+        $(this).parent().html(new_text);
+
+        // Save the state
+        save_state();
+    }
+
+    else {
+        $(this).siblings("textarea").css("background-color", "red").delay(100).animate({backgroundColor: "white"}, "slow").focus();
+    }
+
+});
+
+// Delete some text
+$("#minutes_content").delegate("button[name='delete_text_button']", "click", function() {
+    var category_index = $(this).parent().parent().parent().parent().parent().parent().index();
+    var subcategory_index = $(this).parent().parent().parent().parent().index();
+    var text_index = $(this).parent().parent().index();
+    minutes[category_index][1][subcategory_index][1].splice(text_index, 1);
+    $(this).parent().parent().slideUp("fast", function() {
+        $(this).remove();
+    });
+
+    // Save the state
+    save_state();
+});
+
+/***********
+* GENERATE *
+***********/
+
+// Generate the minutes' source
+$("#generate_minutes_button").click(function() {
+
+    // Make sure that there are some minutes already
+    if ( minutes.length > 0 ) {
+        
+        // Change the [re-]generate button text
+        $("#generate_minutes_button").html("I've made a couple of modifications. Re-generate the source.");
+
+        // Generate the sources and populate the textarea
+        var minutes_source = "<ul>\n"
+
+        for ( var i = 0; i < minutes.length; i++ ) {
+
+            var category = minutes[i];
+            var category_name = $.escapeHTML(category[0]);
+            minutes_source += "\t<li><strong>" + category_name + "</strong>\n\t\t<ul>\n";
+
+            var subcategories = category[1];
+            for ( var j = 0; j < subcategories.length; j++ ) {
+
+                var subcategory = subcategories[j];
+                var subcategory_name = $.escapeHTML(subcategory[0]);
+                minutes_source += "\t\t\t<li><strong>" + subcategory_name + "</strong>\n\t\t\t\t<ul>\n"
+
+                var texts = subcategory[1];
+                for (var k = 0; k < texts.length; k++ ) {
+
+                    var text_name = $.escapeHTML(texts[k]);
+                    minutes_source += "\t\t\t\t\t<li>" + text_name + "</li>\n"
+
+                }
+
+                minutes_source += "\t\t\t\t</ul>\n\t\t\t</li>\n"
+
+            }
+
+            minutes_source += "\t\t</ul>\n\t</li>\n"
+
+        }
+
+        minutes_source += "</ul>"
+
+        $("#minutes_source").html(minutes_source);
+
+        // Create a dialog with the sources textarea and auto-select the contents
+        $("#minutes_source").dialog({
+            modal: true,
+            width: 640,
+            maxWidth: 800,
+            height: 480,
+            maxHeight: 600,
+            closeOnEscape: true,
+            title: "Ctrl+C to copy / ESC to close"
+        });
+        $("#minutes_source").select();
+
+    }
+
+});
+
+/********
+* STYLE *
+********/
+
+// When the mouse is over a "li" element, then make it more visible
+$("#minutes_content").delegate("li", "mouseover", function(event) {
+    if ( $(event.target).is(this) ) {
+        $(this).stop(true, true).animate({
+            backgroundColor: "#EEEEEE",
+            borderTopColor: "#DDDDDD",
+            borderBottomColor: "#DDDDDD",
+            borderLeftColor: "#DDDDDD",
+            borderRightColor: "#DDDDDD"
+        }, "fast");
+    }
+});
+
+// When the mouse is not over a "li" element anymore, restore its original style
+$("#minutes_content").delegate("li", "mouseout", function(event) {
+    if ( $(event.target).is(this) ) {
+        $(this).stop(true, true).animate({
+            backgroundColor: "transparent",
+            borderTopColor: "transparent",
+            borderBottomColor: "transparent",
+            borderLeftColor: "transparent",
+            borderRightColor: "transparent"
+        }, "fast");
+    }
+});
+
+/**********
+* MINUTES *
+**********/
+
+function textify_minutes(minutes_array) {
+        var ma_categories = [];
+        for ( var i = 0; i < minutes_array.length; i++ ) {
+            var ma_category_name = minutes_array[i][0];
+            var ma_category_array = minutes_array[i][1];
+            var ma_subcategories = [ma_category_name];
+            for ( var j = 0; j < ma_category_array.length; j++ ) {
+                var ma_subcategory_name = ma_category_array[j][0];
+                var ma_subcategory_array = ma_category_array[j][1];
+                ma_subcategories.push([ma_subcategory_name].concat(ma_subcategory_array).join("|"));
+            };
+            ma_categories.push(ma_subcategories.join("||"));
+        };
+        return ma_categories.join("|||");
+};
+
+function detextify_minutes (minutes_string) {
+
+    // The final array that we will return
+    var minutes_array = [];
+
+    // ["A>>a>1>2>3>>b>1>2>3", "B>>a>1>>b>1", "C>>a>1"]
+    var ms_categories = minutes_string.split("|||").filter(function(element) {
+        return element.length>0
+    });
+    for ( var i = 0; i < ms_categories.length; i++ ) {
+
+        // The final 2-item array for the each category
+        var ma_category = [];
+
+        // "A>>a>1>2>3>>b>1>2>3"
+        var ms_category = ms_categories[i]
+
+        // ["A", "a>1>2>3", "b>1>2>3"]
+        var ms_subcategories = ms_category.split("||");
+
+        // "A"
+        var ms_category_name = ms_subcategories.splice(0,1)[0];
+
+        // ["A"]
+        ma_category.push(ms_category_name);
+
+        // The final array for all the subcategories in this category
+        var ms_category_array = [];
+        for ( var j = 0; j < ms_subcategories.length; j++ ) {
+
+            // The final 2-item array for each subcategory in this category
+            var ma_subcategory = [];
+
+            // "a>1>2>3"
+            var ms_subcategory = ms_subcategories[j];
+
+            // ["a", "1", "2", "3"]
+            var ms_texts = ms_subcategory.split("|");
+
+            // "a"
+            var ms_subcategory_name = ms_texts.splice(0,1)[0];
+
+            // ["a"]
+            ma_subcategory.push(ms_subcategory_name);
+
+            // ["1", "2", "3"]
+            //var ma_subcategory_array = ms_texts
+
+            // ["a", ["1", "2", "3"]]
+            ma_subcategory.push(ms_texts);
+
+            // [["a", ["1", "2", "3"]]
+            ms_category_array.push(ma_subcategory);
+
+        };
+
+        // ["A", ["a", ["1", "2", "3"]]]
+        ma_category.push(ms_category_array);
+
+        // [["A", ["a", ["1", "2", "3"]]]]
+        minutes_array.push(ma_category);
+
+    };
+
+    return minutes_array;
+
+};
+
+function create_minutes(minutes_array) {
+
+    // If running this script upon initialization,
+    // first change the instructions and create the sortable minutes list
+    if ( !minutes_have_been_added ) {
+        minutes_have_been_added = true;
+        $("#container_minutes_title").hide();
+        $("#container_generate_minutes").fadeIn();
+        $("#minutes_content").append("<ul id='minutes_list'></ul>");
+        $("#minutes_list").sortable({
+            placeholder: "sortable-state-highlight",
+            start: function(event, ui) {
+                var old_category_index = $(ui.item).index();
+                $(ui.item).data("old_category_index", old_category_index);
+            },
+            update: function(event, ui) {
+                var new_category_index = $(ui.item).index();
+                var old_category_index = $(ui.item).data("old_category_index");
+                if ( new_category_index != old_category_index ) {
+                    minutes.move(old_category_index, new_category_index);
+                    // Save the state
+                    save_state();
+                }
+            }
+        });
+        //The following line causes a bug in Firefox where input fields and
+        //textareas would not react to the left mouse click
+        //$("#minutes_list").disableSelection();
+    }
+
+    for ( var i = 0; i < minutes.length; i++ ) {
+
+        var m_category = minutes[i];
+        var m_category_name = m_category[0];
+        var m_category_array = m_category[1];
+
+        // Create the new category HTML
+        var add_category_html = "<li><span class='category'>" + m_category_name + "</span><ul></ul></li>"
+        $("#minutes_list").append(add_category_html);
+        $("#minutes_list").children("li").last().children("ul").sortable({
+            placeholder: "sortable-state-highlight",
+            start: function(event, ui) {
+                var old_subcategory_index = $(ui.item).index();
+                $(ui.item).data("old_subcategory_index", old_subcategory_index);
+            },
+            update: function(event, ui) {
+                var new_subcategory_index = $(ui.item).index();
+
+                var old_subcategory_index = $(ui.item).data("old_subcategory_index");
+                if ( new_subcategory_index != old_subcategory_index ) {
+                    var parent_category_index = $(ui.item).parent().parent().index();
+                    minutes[parent_category_index][1].move(old_subcategory_index, new_subcategory_index);
+                    // Save the state
+                    save_state();
+                }
+            }
+        });
+        //The following line causes a bug in Firefox where input fields and
+        //textareas would not react to the left mouse click
+        //$("#minutes_list").children("li").last().children("ul").disableSelection();
+
+        for ( var j = 0; j < m_category_array.length; j++  ) {
+
+            var m_subcategory = m_category_array[j];
+            var m_subcategory_name = m_subcategory[0];
+            var m_subcategory_array = m_subcategory[1];
+
+            // Create the new subcategory HTML
+            var add_subcategory_html = "<li><span class='subcategory'>" + m_subcategory_name + "</span><ul></ul></li>"
+            $("#minutes_list").children("li").last().children("ul").append(add_subcategory_html);
+            $("#minutes_list").children("li").last().children("ul").children("li").last().children("ul").sortable({
+                placeholder: "sortable-state-highlight",
+                start: function(event, ui) {
+                    var old_text_index = $(ui.item).index();
+                    $(ui.item).data("old_text_index", old_text_index);
+                },
+                update: function(event, ui) {
+                    var new_text_index = $(ui.item).index();
+                    var old_text_index = $(ui.item).data("old_text_index");
+                    if ( new_text_index != old_text_index ) {
+                        var parent_category_index = $(ui.item).parent().parent().parent().parent().index();
+                        var parent_subcategory_index = $(ui.item).parent().parent().index();
+                        minutes[parent_category_index][1][parent_subcategory_index][1].move(old_text_index, new_text_index);
+                        // Save the state
+                        save_state();
+                    }
+                }
+            });
+            //The following line causes a bug in Firefox where input fields and
+            //textareas would not react to the left mouse click
+            //$("#minutes_list").children("li").last().children("ul").children("li").last().children("ul").disableSelection();
+
+            for ( var k = 0; k < m_subcategory_array.length; k++ ) {
+
+                var m_text = m_subcategory_array[k];
+
+                // Create the new text HTML
+                $("#minutes_list").children("li").last().children("ul").children("li").last().children("ul").append("<li><span class='text'>" + m_text + "</span></li>");
+
+            };
+
+            // Create the add new text HTML
+            var add_text_html = "<textarea rows='2' cols='75' name='add_text_text' placeholder='Describe the task you worked on...'></textarea><button name='add_text_button'>&#10010;</button>";
+            $("#minutes_list").children("li").last().children("ul").children("li").last().append(add_text_html);
+
+        };
+
+        // Create the add new subcategory HTML and set up the autocompletion
+        var add_subcategory_html = "<input size='40' type='text' name='add_subcategory_text' placeholder='What part of the project did you work on?' /><button name='add_subcategory_button'>&#10010;</button>"
+        $("#minutes_list").children("li").last().append(add_subcategory_html);
+        $("#minutes_list").children("li").last().children("input").autocomplete({
+            source: subcategories
+        });
+
+
+
+    };
+
+};
+
+// Reset the minutes array and remove the minutes HTML
+function reset_minutes() {
+
+    // Reset the minutes array
+    minutes = [];
+
+    // Remove all the minutes HTML
+    $("#minutes_list").children("li").slideUp("fast", function() {
+        $(this).remove();
+    });
+};
+
+/********
+* STATE *
+********/
+
+// Save the minutes state
+function save_state() {
+
+    // Save the current state
+    var minutes_string = textify_minutes(minutes);
+    $.post("save", { state : minutes_string }, function(data) {
+        highlight_menu(data, "1", "#menu_save");
+    });
+
+};
+
+// Load the minutes state
+function load_state() {
+
+    // First, reset the current minutes
+    reset_minutes()
+
+    // Second, load the state, detextify and recreate the minutes
+    $.get("load", function(data) {
+        highlight_menu(data, "|||", "#menu_load", true);
+        minutes = detextify_minutes(data);
+        if ( minutes.length > 0 ) {
+            create_minutes(minutes);
+        };
+    });
+
+};
+
+// Reset the minutes state
+function reset_state() {
+
+    // First, reset the current minutes
+    reset_minutes()
+
+    // Second, version and reset the state
+    $.get("reset", function(data) {
+        highlight_menu(data, "1", "#menu_reset");
+    });
+
+};
+
+/*******
+* MENU *
+*******/
+
+// Action to take when clicking on the menu Save button
+$("#menu_save").click(function() {
+    save_state();
+});
+
+// Action to take when clicking on the menu Load button
+$("#menu_load").click(function() {
+    load_state();
+});
+
+// Action to take when clicking on the menu Reset button
+$("#menu_reset").click(function() {
+    reset_state();
+});
+
+// Action to take when clicking on the menu Help button
+$("#menu_help").click(function() {
+    alert("help!");
+});
+
+// Shortly highlight an element as green if data == expected, otherwise red.
+// If reversed is set, the opposite happens.
+function highlight_menu(data, expected, target, reversed) {
+    reversed = typeof reversed !== "undefined" ? reversed : false;
+    if ( data == expected ) {
+        if ( !reversed ) { var color = "#00FF00"; }
+        else { var color = "#FF0000"; }
+    }
+    else {
+        if ( reversed ) { var color = "#00FF00"; }
+        else { var color = "#FF0000"; }
+    };
+    $(target).css("background-color", color).delay(100).animate({backgroundColor: "transparent"}, "slow")
+};
+
+/*********
+* HELPER *
+*********/
+
+// Convert new lines into HTML break elements
+function nl2br(text) {
+    return text.replace(/\n/g, "<br />");
+};
+
+// Convert HTML break elements into new lines
+function br2nl(text) {
+    return text.replace(/<br\s*[\/]?>/gi, "\n");
+};
+
+// Get the first element of a list; used with map()
+function get_first_element(element) {
+    return element[0];
+};
+
+// Add a standard move function to the Array type
+Array.prototype.move = function (old_index, new_index) {
+    this.splice(new_index, 0, this.splice(old_index, 1)[0]);
+};
+
+// http://stackoverflow.com/questions/6020714/escape-html-using-jquery
+// List of HTML entities for escaping.
+var htmlEscapes = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#x27;",
+  "/": "&#x2F;",
+  "|": "&#x7C;"
+};
+
+// Regex containing the keys listed immediately above.
+var htmlEscaper = /[&<>"'\/|]/g;
+
+// Escape a string for HTML interpolation.
+$.escapeHTML = function(s) {
+  return ("" + s).replace(htmlEscaper, function(match) {
+    return htmlEscapes[match];
+  });
+};
+
+        </script>
+
+    </body>
+
+</html>
