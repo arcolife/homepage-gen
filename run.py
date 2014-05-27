@@ -62,6 +62,16 @@ def index():
     else:
         return "Access denied."
 
+@app.route('/test')
+def test():
+    """
+    test page.
+    """
+    if not RESTRICT_BY_IP or ( RESTRICT_BY_IP and request.remote_addr in IPS ):
+        return render_template('index.html')
+    else:
+        return "Access denied."
+
 @app.route('/save', methods=['POST'])
 def save_state():
     """
