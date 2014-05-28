@@ -2,7 +2,9 @@ homepage-gen
 ============
 
 This is a hack of the original repository - http://www.github.com/kasioumis/wemig
-Ref: http://homepagegen.tk
+
+- Ref: http://homepagegen.tk
+- Demo: http://minimalist.herokuapp.com
 
 This is a tool supposed to help hackers and builders generate minimalistic homepages.
 
