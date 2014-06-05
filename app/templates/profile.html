@@ -14,17 +14,7 @@
   </head>
   <body>
     <div class="wrapper">
-    <ul>
-      {% if users %}
-      {% for user in users %}
-      <li><a href="{{user.id}}">{{user.name}}'s Stuff</a></li>
-      {% endfor %}
-      {% else %}
-      Not logged In!
-      {% endif %}
-    </ul>
-
+      <p>User id is : {{ id }}</p>
     </div>
-    <script src="{{ url_for('static', filename='scale.fix.js') }}"></script>
   </body>
 </html>

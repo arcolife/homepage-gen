@@ -24,10 +24,15 @@ CSRF_ENABLED     = True
 
 # Use a secure, unique and absolutely secret key for
 # signing the data. 
-CSRF_SESSION_KEY = "secret"
+CSRF_SESSION_KEY = "#%#$^%^*THDFFSDFCWERB%vergsdcery56!!"
+
+RECAPTCHA_USE_SSL = False
+RECAPTCHA_PUBLIC_KEY = '6LeYIbsSAAAAACRPIllxA7wvXjIE411PfdB2gt2J'
+RECAPTCHA_PRIVATE_KEY = '6LeYIbsSAAAAAJezaIq3Ft_hSTo0YtyeFG-JgRtu'
+RECAPTCHA_OPTIONS = {'theme': 'white'}
 
 # Secret key for signing cookies
-SECRET_KEY = "secret"
+SECRET_KEY = "#$FSDFSETE^$TFEFV#$%$&"
 
 ###################
 # Template settings
