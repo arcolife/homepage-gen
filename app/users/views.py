@@ -57,7 +57,7 @@ def register():
 
     # Log the user in, as he now has an id
     session['user_id'] = user.id
-
+    print user
     # flash will display a message to the user
     flash('Thanks for registering')
     # redirect user to the 'home' method of the user module.

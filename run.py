@@ -8,8 +8,8 @@
 
 import sys
 
-from app import app
-
+from app import app, db
+from app.mod_auth.models import User
 from flask import Flask, \
                   render_template, \
                   request#, \
@@ -29,29 +29,24 @@ from config import \
     PORT, \
     DEBUG
 
-# Instantiate the web application
 #app = Flask(__name__)
 
-# new hack for user module
-'''
-from flask.ext.login import LoginManager
+## old user module hack
+# from flask.ext.login import LoginManager
+# login_manager = LoginManager()
+# login_manager.init_app(app)
+# @login_manager.user_loader
+# def load_user(userid):
+#     try:
+#         return User.get(userid)
+#     except:
+#         return None
+# @app.route("/login", methods=['GET', 'POST'])
+# def login():    
 
-login_manager = LoginManager()
-login_manager.init_app(app)
-
-@login_manager.user_loader
-def load_user(userid):
-    try:
-        return User.get(userid)
-    except:
-        return None
-
-@app.route("/login", methods=['GET', 'POST'])
-def login():
-    
-'''
-
-
+def getUserList():
+    users =  User.query.filter_by(email="arcshams@gmail.com").first()
+    return users
 
 @app.route('/')
 def index():
@@ -59,14 +54,14 @@ def index():
     The web application main entry point.
     """   
     users=getUserList()
-    return render_template('index.html',users=users,
+    return render_template('index.html',
+                           users=users,
                            **TEMPLATE_CONFIGURATION)
 
 @app.route('/<user_id>')
 def show(user_id):
     return render_template('profile.html', id = user_id )
 
-'''        
 @app.route('/test')
 def test():
     """
@@ -76,7 +71,6 @@ def test():
         return render_template('test.html')
     else:
         return "Access denied."
-'''
 
 @app.route('/save', methods=['POST'])
 def save_state():
@@ -141,15 +135,6 @@ def save_pid():
         chmod(".pid", 0600)
     except:
         pass
-
-
-from app import db
-from app.mod_auth.models import User
-
-def getUserList():
-    users =  User.query.filter_by(email="archit.py@gmail.com").first()
-    return users
-
 
 if __name__ == '__main__':
     try:

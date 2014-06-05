@@ -3,20 +3,19 @@ from flask import Flask, render_template
 # Import SQLAlchemy
 from flask.ext.sqlalchemy import SQLAlchemy
 import sys
+import os
 
 # Define the WSGI application object
 app = Flask(__name__)
 
 ####### User Login Hack BEGINS
-import os
-from flask.ext.login import LoginManager
-from flask.ext.openid import OpenID
-from config import BASE_DIR
+# from flask.ext.login import LoginManager
+# from flask.ext.openid import OpenID
+# from config import BASE_DIR
 
-lm = LoginManager()
-lm.init_app(app)
-oid = OpenID(app, os.path.join(BASE_DIR, 'tmp'))
-
+# lm = LoginManager()
+# lm.init_app(app)
+# oid = OpenID(app, os.path.join(BASE_DIR, 'tmp'))
 ####### User Login Hack ENDS
 
 # Configurations
