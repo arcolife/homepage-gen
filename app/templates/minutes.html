@@ -1,4 +1,4 @@
-l<html>
+<html>
 
     <!-- TODO:
             * Parse URL's (parse them before or after the string is escaped?)
@@ -14,10 +14,10 @@ l<html>
         <title>{{ title }}</title>
 
         <!-- Standard libraries -->
-        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
-        <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js"></script>
-        <script src="//code.jquery.com/color/jquery.color-2.1.2.min.js"></script>
-        <link rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/themes/base/jquery-ui.css">
+        <script src="{{ url_for('static', filename='jquery.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='jquery-ui.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='jquery.color-2.1.2.min.js') }}"></script>
+        <link rel="stylesheet" href="{{ url_for('static', filename='jquery-ui.css') }}">
         <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
         
         <!-- Custom style settings -->
@@ -149,6 +149,12 @@ l<html>
                     <li id="menu_help">
                         <a href="#"><span class="ui-icon ui-icon-help"></span>Help</a>
                     </li>
+		    {% if user %}
+		    <li><a href="/users/me/">{{user.name}}'s Profile</a></li>
+		    {% else %}
+		    <li><a href="/users/login/">Login</a></li>
+		    <li><a href="/users/register/">Register</a></li>
+		    {% endif %}		    
                 </ul>
             </div>
 

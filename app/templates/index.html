@@ -3,32 +3,40 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>Minimal by Steve Smith</title>
+    <title>HomePage-Gen</title>
     
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='pygment_trac.css') }}">
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-    <!--[if lt IE 9]>
-	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-	<![endif]-->
   </head>
   <body>
-    <div class="wrapper">
-    <ul>
-      {% if users %}
-      {% for user in users %}
-      <li><a href="{{user.id}}">{{user.name}}'s Stuff</a></li>
-      {% endfor %}
-      {% else %}
-      Not logged In!
-      <br />
-      <li><a href="/users/login/">Login here</a></li>
-      <li><a href="/users/register/">Register here</a></li>
-      <li><a href="/users/me/">Your Profile</a></li>      
-      {% endif %}
-    </ul>
 
+    <div class="wrapper">
+      <p style="color: Green;">Minimalistic Homepage Generator</p>
     </div>
-    <script src="{{ url_for('static', filename='scale.fix.js') }}"></script>
+    <hr />
+
+    <div class="col-lg-8"> 
+      <ul>
+	<li><a href="/new"><u>Add new</u></a></li>
+	<li><a href="/arcolife"><u>Arcolife's stuff</u></a></li>
+	<li><a href="/cj"><u>CJ's stuff</u></a></li>
+      </ul>
+    </div>
+
+    <div class="col-lg-3">
+      <ul>
+	{% if user %}
+	<li><a href="/users/me/">{{user.name}}'s Profile</a></li>
+	{% else %}
+	Not logged In!
+	<br />
+	<li><a href="/users/login/">Login here</a></li>
+	<li><a href="/users/register/">Register here</a></li>
+	{% endif %}
+      </ul>
+    </div>
+    
   </body>
+  <script src="{{ url_for('static', filename='scale.fix.js') }}"></script>
 </html>

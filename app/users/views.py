@@ -36,7 +36,7 @@ def login():
       # the session can't be modified as it's signed, 
       # it's a safe place to store the user id
       session['user_id'] = user.id
-      flash('Welcome %s' % user.name)
+      flash('Success! Welcome %s!' % user.name)
       return redirect(url_for('users.home'))
     flash('Wrong email or password', 'error-message')
   return render_template("users/login.html", form=form)

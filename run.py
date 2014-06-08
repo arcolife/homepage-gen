@@ -1,25 +1,30 @@
 #!/usr/bin/python
-
 # -*- coding: utf-8 -*-
 
 ################
 # homepage-gen #
-################
+###############
 
 import sys
-
-from app import app, db
-from app.mod_auth.models import User
-from flask import Flask, \
-                  render_template, \
-                  request#, \
-                  #flash, redirect, url_for, session
-
 from os import chmod, \
                getpid, \
                getppid
 from shutil import copyfile
 from time import time
+
+from app import app, db
+from app.users.decorators import requires_login
+from app.users.models import User
+
+from flask import Flask, \
+                  render_template, \
+                  request, \
+                  Blueprint, \
+                  flash, \
+                  g, \
+                  session, \
+                  redirect, \
+                  url_for
 
 from config import \
     TEMPLATE_CONFIGURATION, \
@@ -29,38 +34,37 @@ from config import \
     PORT, \
     DEBUG
 
-#app = Flask(__name__)
 
-## old user module hack
-# from flask.ext.login import LoginManager
-# login_manager = LoginManager()
-# login_manager.init_app(app)
-# @login_manager.user_loader
-# def load_user(userid):
-#     try:
-#         return User.get(userid)
-#     except:
-#         return None
-# @app.route("/login", methods=['GET', 'POST'])
-# def login():    
-
-def getUserList():
-    users =  User.query.filter_by(email="arcshams@gmail.com").first()
-    return users
+@app.before_request
+def before_request():
+    """
+    pull user's profile from the database before every request are treated
+    """
+    g.user = None
+    if 'user_id' in session:
+        g.user = User.query.get(session['user_id'])
 
 @app.route('/')
 def index():
     """
     The web application main entry point.
     """   
-    users=getUserList()
     return render_template('index.html',
-                           users=users,
+                           user=g.user,
+                           **TEMPLATE_CONFIGURATION)
+
+@app.route('/new')
+def new():
+    """
+    The web application main entry point.
+    """   
+    return render_template('minutes.html',
+                           user=g.user,
                            **TEMPLATE_CONFIGURATION)
 
 @app.route('/<user_id>')
 def show(user_id):
-    return render_template('profile.html', id = user_id )
+    return render_template('profiles/'+user_id+'.html', user=user_id )
 
 @app.route('/test')
 def test():
@@ -136,14 +140,13 @@ def save_pid():
     except:
         pass
 
+
 if __name__ == '__main__':
     try:
-        print str(getUserList())
-        #if not RESTRICT_BY_IP or ( RESTRICT_BY_IP and request.remote_addr in IPS ):
         # First, store the process ID
         save_pid()
-        # Configure and start the web application with the given settings.
-        app.debug = True #DEBUG
+        # Configure and start the web application 
+        # with the given settings.
         app.run(host = HOST,
                 port = PORT,
                 debug = True)

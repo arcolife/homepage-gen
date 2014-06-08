@@ -127,6 +127,6 @@ HOST = "0.0.0.0"
 PORT = 5000
 
 # Is this a debug application?
-#DEBUG = True
-DEBUG = False
+DEBUG = True
+#DEBUG = False
 
