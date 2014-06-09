@@ -64,7 +64,10 @@ def new():
 
 @app.route('/<user_id>')
 def show(user_id):
-    return render_template('profiles/'+user_id+'.html', user=user_id )
+    try:
+        return render_template('profiles/'+user_id+'.html', user=user_id )
+    except:
+        return render_template('404.html')
 
 @app.route('/test')
 def test():
@@ -149,6 +152,7 @@ if __name__ == '__main__':
         # with the given settings.
         app.run(host = HOST,
                 port = PORT,
-                debug = True)
+                #debug = True)
+                debug = False)
     except:
         raise
