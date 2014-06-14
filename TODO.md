@@ -1,0 +1,7 @@
+- [x] Generate Homepage based on users in DB
+- [x] Add login module
+- [x] Add 'add new' link
+- [ ] Make a generic user profile page
+- [ ] Connect MongoDB
+- [ ] Integrate Mongo Homepage Structure
+- [ ] Connect minutes.html to a form which alters DB (remove '.state' based flat-file storage dependency)

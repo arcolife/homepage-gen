@@ -1,0 +1,19 @@
+[
+    { "user" : {
+	"homepage" : {
+	    "content" : [
+		"<headers>", 
+		["<list of urls>"],
+	    ]
+	},
+	"id":"<info>",
+	"metadata":"<info>",
+	"role": "<info>",
+	"status": "<info>",
+	"name" : "<info>",
+	"email": "<info>",
+	"password": "<info>",
+	"session": "<info>" 
+    }},
+	..
+]

@@ -19,15 +19,22 @@
     <div class="col-lg-8"> 
       <ul>
 	<li><a href="/new"><u>Add new</u></a></li>
+	{% if users %}
+	{% for user in users %}
+	<!-- 
 	<li><a href="/arcolife"><u>Arcolife's stuff</u></a></li>
 	<li><a href="/cj"><u>CJ's stuff</u></a></li>
+	-->
+	<li><a href="/{{user.name}}"><u>{{user.name}}'s stuff</u></a></li>
+	{% endfor %}
+	{% endif %}
       </ul>
     </div>
 
     <div class="col-lg-3">
       <ul>
-	{% if user %}
-	<li><a href="/users/me/">{{user.name}}'s Profile</a></li>
+	{% if username %}
+	<li><a href="/users/me/">{{username.name}}'s Profile</a></li>
 	{% else %}
 	Not logged In!
 	<br />

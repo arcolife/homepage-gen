@@ -49,8 +49,14 @@ def index():
     """
     The web application main entry point.
     """   
+    users = []
+    try:
+        users = User.query.all()
+    except:
+        pass
     return render_template('index.html',
-                           user=g.user,
+                           username=g.user,
+                           users=users,
                            **TEMPLATE_CONFIGURATION)
 
 @app.route('/new')
@@ -153,6 +159,6 @@ if __name__ == '__main__':
         app.run(host = HOST,
                 port = PORT,
                 #debug = True)
-                debug = False)
+                debug = True)
     except:
         raise
