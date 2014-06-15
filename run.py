@@ -45,7 +45,7 @@ def before_request():
         g.user = User.query.get(session['user_id'])
 
 @app.route('/')
-def index():
+def home():
     """
     The web application main entry point.
     """   

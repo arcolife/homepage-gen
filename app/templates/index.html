@@ -34,7 +34,8 @@
     <div class="col-lg-3">
       <ul>
 	{% if username %}
-	<li><a href="/users/me/">{{username.name}}'s Profile</a></li>
+	<li><a href="/{{username.name}}">My stuff</a></li>
+	<li><a href="/users/logout/">Logout</a></li>
 	{% else %}
 	Not logged In!
 	<br />

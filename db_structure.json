@@ -1,19 +1,37 @@
 [
-    { "user" : {
-	"homepage" : {
-	    "content" : [
-		"<headers>", 
-		["<list of urls>"],
-	    ]
+    { 
+	"username" : {
+	    "content" : { 
+		"title" : "<user>'s stuff",
+		"url": "LINK" 
+	    }
 	},
-	"id":"<info>",
-	"metadata":"<info>",
-	"role": "<info>",
-	"status": "<info>",
-	"name" : "<info>",
-	"email": "<info>",
-	"password": "<info>",
-	"session": "<info>" 
-    }},
-	..
+	"children" : [
+	    { 
+		"content" : { 
+		    "title" : "DATA",
+		    "url": "LINK"
+		},
+		"children": [ ]
+	    },
+	    { 
+		"content" : { 
+		    "title" : "DATA",
+		    "url": "LINK"
+		},
+		"children": [ ]
+	    },
+	]
+	"id":"DATA",
+	"metadata":"DATA",
+	"role": "DATA",
+	"status": "DATA",
+	"name" : "DATA",
+	"email": "DATA",
+	"password": "DATA",
+	"session": "DATA" 
+    },
+    {},    
+    {},    
+    {},    
 ]

@@ -4,14 +4,15 @@ from werkzeug import check_password_hash, generate_password_hash
 from app import db
 from app.users.forms import RegisterForm, LoginForm
 from app.users.models import User
-from app.users.decorators import requires_login
+from app.users.decorators import requires_login, logout_user
 
 mod = Blueprint('users', __name__, url_prefix='/users')
 
 @mod.route('/me/')
 @requires_login
 def home():
-  return render_template("users/profile.html", user=g.user)
+  #return render_template("users/profile.html", user=g.user)
+  return redirect('/')
 
 @mod.before_request
 def before_request():
@@ -36,10 +37,18 @@ def login():
       # the session can't be modified as it's signed, 
       # it's a safe place to store the user id
       session['user_id'] = user.id
-      flash('Success! Welcome %s!' % user.name)
-      return redirect(url_for('users.home'))
+      #flash('Success! Welcome %s!' % user.name)
+      return redirect(url_for('home'))
     flash('Wrong email or password', 'error-message')
   return render_template("users/login.html", form=form)
+
+@mod.route('/logout/')
+def logout():
+  """
+  Remove user from session.
+  """
+  logout_user()
+  return redirect('/')
 
 @mod.route('/register/', methods=['GET', 'POST'])
 def register():
@@ -59,7 +68,7 @@ def register():
     session['user_id'] = user.id
     print user
     # flash will display a message to the user
-    flash('Thanks for registering')
+    #flash('Thanks for registering')
     # redirect user to the 'home' method of the user module.
     return redirect(url_for('users.home'))
   return render_template("users/register.html", form=form)
