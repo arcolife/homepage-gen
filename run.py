@@ -45,21 +45,17 @@ def before_request():
         g.user = User.query.get(session['user_id'])
 
 @app.route('/')
-def home():
+def home(users=None):
     """
     The web application main entry point.
     """   
-    users = []
-    try:
-        users = User.query.all()
-    except:
-        pass
+    users = User.query.all()
     return render_template('index.html',
                            username=g.user,
                            users=users,
                            **TEMPLATE_CONFIGURATION)
 
-@app.route('/new')
+@app.route('/new/')
 def new():
     """
     The web application main entry point.
@@ -68,14 +64,14 @@ def new():
                            user=g.user,
                            **TEMPLATE_CONFIGURATION)
 
-@app.route('/<user_id>')
+@app.route('/<user_id>/')
 def show(user_id):
     try:
         return render_template('profiles/'+user_id+'.html', user=user_id )
     except:
         return render_template('404.html')
 
-@app.route('/test')
+@app.route('/test/')
 def test():
     """
     test page.
@@ -85,7 +81,7 @@ def test():
     else:
         return "Access denied."
 
-@app.route('/save', methods=['POST'])
+@app.route('/save/', methods=['POST'])
 def save_state():
     """
     Save the current state to a local file.
@@ -101,7 +97,7 @@ def save_state():
         print e
         return "0"
 
-@app.route('/load', methods=['GET'])
+@app.route('/load/', methods=['GET'])
 def load_state():
     """
     Load the last state from a local file.
@@ -116,7 +112,7 @@ def load_state():
     except:
         return "|||"
 
-@app.route('/reset', methods=['GET'])
+@app.route('/reset/', methods=['GET'])
 def reset_state():
     """
     Version the current state in a local file and reset it.
