@@ -34,27 +34,34 @@ from config import \
     PORT, \
     DEBUG
 
-
 @app.before_request
 def before_request():
     """
     pull user's profile from the database before every request are treated
     """
     g.user = None
-    if 'user_id' in session:
-        g.user = User.query.get(session['user_id'])
+    # # For SQLAlchemy based queries
+    # if 'user_id' in session:
+    #     g.user = User.query.get(session['user_id'])
+    for user in User.objects:
+        print user.name
 
 @app.route('/')
 def home(users=None):
     """
     The web application main entry point.
     """   
-    users = User.query.all()
+    # For SQLAlchemy
+    # users = User.query.all()
+    # return render_template('index.html',
+    #                        username=g.user,
+    #                        users=users,
+    #                        **TEMPLATE_CONFIGURATION)
     return render_template('index.html',
-                           username=g.user,
-                           users=users,
+                           username=None,
+                           users=User.objects,
                            **TEMPLATE_CONFIGURATION)
-
+    
 @app.route('/new/')
 def new():
     """
@@ -72,12 +79,13 @@ def show(user_id):
         return render_template('404.html')
 
 @app.route('/test/')
-def test():
+@app.route('/test/<pg>')
+def test(pg='1'):
     """
     test page.
     """
     if not RESTRICT_BY_IP or ( RESTRICT_BY_IP and request.remote_addr in IPS ):
-        return render_template('test.html')
+        return render_template('test'+pg+'.html', name="Human")
     else:
         return "Access denied."
 

@@ -1,7 +1,9 @@
 # Import flask and template operators
 from flask import Flask, render_template
-# Import SQLAlchemy
-from flask.ext.sqlalchemy import SQLAlchemy
+# Import MongoEngine
+from flask.ext.mongoengine import MongoEngine
+# # Import SQLAlchemy
+# from flask.ext.sqlalchemy import SQLAlchemy
 import sys
 import os
 
@@ -23,8 +25,18 @@ app.config.from_object('config')
 
 # Define the database object which is imported
 # by modules and controllers
-db = SQLAlchemy(app)
+#db = SQLAlchemy(app)
+# # Build the database:
+# # This will create the database file using SQLAlchemy
+# db.create_all()
 
+app.config["MONGODB_SETTINGS"] = { 
+    "DB": os.environ.get("FLASK_DB"),
+    "USERNAME": os.environ.get("FLASK_USER"),
+    "PASSWORD": os.environ.get("FLASK_PASS"),
+    "HOST": "127.0.0.1",
+    "PORT": 27017 }
+db = MongoEngine(app)
 
 def install_secret_key(app, filename='secret_key'):
     """Configure the SECRET_KEY from a file
@@ -56,8 +68,3 @@ def not_found(error):
 
 from app.users.views import mod as usersModule
 app.register_blueprint(usersModule)
-
-
-# Build the database:
-# This will create the database file using SQLAlchemy
-db.create_all()
