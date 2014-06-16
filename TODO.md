@@ -9,9 +9,12 @@
   (remove '.state' based flat-file storage dependency)
 
 =============== BUGS ====================
-- [ ] Fix:
+- [ ] MAJOR:
   - [ ] AttributeError: type object 'User' has no attribute 'query' (/users/views.py)
-  - [ ] run.py per_user_query / query_all functionalities 
-    in home() and before_request()
+  - [ ] refactor in run.py: 
+    - per_user_query / query_all functionalities for home() and before_request()
+  - [ ] fix session based user_id query / session handling for new db (Mongo)
+  
+- [ ] MINOR:    
   - [ ] If user is logged in, the "add new" page should wrap column width accordingly
   - [ ] Add "Go to Homepage" on profile page / everywhere else.
