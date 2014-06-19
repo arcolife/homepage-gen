@@ -41,25 +41,20 @@ def before_request():
     """
     g.user = None
     # # For SQLAlchemy based queries
-    # if 'user_id' in session:
-    #     g.user = User.query.get(session['user_id'])
+    if 'user_id' in session:
+        g.user = User.objects.get(id=session['user_id']).username
     for user in User.objects:
-        print user.name
-
+        print user.username
+ 
 @app.route('/')
 def home(users=None):
     """
     The web application main entry point.
     """   
-    # For SQLAlchemy
-    # users = User.query.all()
-    # return render_template('index.html',
-    #                        username=g.user,
-    #                        users=users,
-    #                        **TEMPLATE_CONFIGURATION)
+    users = User.objects
     return render_template('index.html',
-                           username=None,
-                           users=User.objects,
+                           username=g.user,
+                           users=users,
                            **TEMPLATE_CONFIGURATION)
     
 @app.route('/new/')
@@ -79,7 +74,7 @@ def show(user_id):
         return render_template('404.html')
 
 @app.route('/test/')
-@app.route('/test/<pg>')
+@app.route('/test/<pg>/')
 def test(pg='1'):
     """
     test page.

@@ -17,5 +17,5 @@ def logout_user():
     also clean up the remember me cookie if it exists.
     '''
     if 'user_id' in session:
-        session.pop('user_id')
+        print "Logged out: %s" % (session.pop('user_id'))
     return True

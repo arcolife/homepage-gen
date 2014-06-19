@@ -37,18 +37,21 @@ class Metadata(db.Document):
     date_uploaded = db.DateTimeField(help_text='date published')
     children_count = db.IntField(default=0)
 
-class User(db.Document):
-    username = db.StringField(max_length=50)
-    name = db.StringField(max_length=50)
-    email = db.StringField(required=True)
-    role = db.StringField(max_length=20)
-    status = db.StringField(max_length=10, required=True)
-    session = db.StringField()
-    password = db.StringField(max_length=20)
-    tags = db.ListField(db.StringField(max_length=30))
+class HomePage(db.EmbeddedDocument):
+    name = db.StringField(max_length=50)    
     children = db.ListField(db.EmbeddedDocumentField(Content))
     content = db.EmbeddedDocumentField(Content)
     metadata = db.ReferenceField(Metadata)
+    
+class User(db.Document):
+    username = db.StringField(max_length=50, required=True)
+    email = db.StringField(required=True)
+    password = db.StringField(required=True) 
+    homepage = db.EmbeddedDocumentField(HomePage)
+    role = db.StringField(max_length=20)
+    status = db.StringField(max_length=10)
+    session = db.DictField() #db.StringField() 
+    tags = db.ListField(db.StringField(max_length=30))
 
     #_id
     

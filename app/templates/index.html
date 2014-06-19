@@ -25,7 +25,7 @@
 	<li><a href="/arcolife"><u>Arcolife's stuff</u></a></li>
 	<li><a href="/cj"><u>CJ's stuff</u></a></li>
 	-->
-	<li><a href="/{{user.name}}"><u>{{user.name}}'s stuff</u></a></li>
+	<li><a href="/{{user.username}}"><u>{{user.username}}'s stuff</u></a></li>
 	{% endfor %}
 	{% endif %}
       </ul>
@@ -34,7 +34,7 @@
     <div class="col-lg-3">
       <ul>
 	{% if username %}
-	<li><a href="/{{username.name}}">My stuff</a></li>
+	<li><a href="/{{username}}">My stuff</a></li>
 	<li><a href="/users/logout/">Logout</a></li>
 	{% else %}
 	Not logged In!
